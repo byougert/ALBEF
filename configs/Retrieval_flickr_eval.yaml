@@ -4,8 +4,8 @@ test_file: '/data/ALBEF/data/my60_flickr30k_val.json'
 split_file: '/data/ALBEF/data/dataset_flickr30k.json'
 image_root: '/data/dataset/flickr30k/flickr30k-images/' # flickr30k-images/
 
-img2txt_file: '/data/ALBEF/data/flickr30k_test_img2text.json'
-txt2img_file: '/data/ALBEF/data/flickr30k_test_text2img.json'
+img2text_file: '/data/ALBEF/data/flickr30k_test_img2text.json'
+text2img_file: '/data/ALBEF/data/flickr30k_test_text2img.json'
 
 bert_config: 'configs/config_bert.json'
 
