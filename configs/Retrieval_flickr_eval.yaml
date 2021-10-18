@@ -1,8 +1,8 @@
 train_file:  ['/data/ALBEF/data/flickr30k_train.json']
 val_file: '/data/ALBEF/data/my60_flickr30k_val.json'
-test_file: '/data/ALBEF/data/flickr30k_test.json'
+test_file: '/data/ALBEF/data/my60_flickr30k_val.json'
 split_file: '/data/ALBEF/data/dataset_flickr30k.json'
-image_root: '/data/dataset/flickr30k/' # flickr30k-images/
+image_root: '/data/dataset/flickr30k/flickr30k-images/' # flickr30k-images/
 
 img2txt_file: '/data/ALBEF/data/flickr30k_test_img2text.json'
 txt2img_file: '/data/ALBEF/data/flickr30k_test_text2img.json'
@@ -11,7 +11,7 @@ bert_config: 'configs/config_bert.json'
 
 image_res: 384
 batch_size_train: 32
-batch_size_test: 64
+batch_size_test: 1
 
 queue_size: 65536
 momentum: 0.995

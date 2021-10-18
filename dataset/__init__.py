@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from PIL import Image
 
-from dataset.caption_dataset import re_train_dataset, re_eval_dataset, pretrain_dataset
+from dataset.caption_dataset import re_train_dataset, re_eval_dataset, pretrain_dataset, re_split_train_dataset, re_split_eval_dataset
 from dataset.nlvr_dataset import nlvr_dataset
 from dataset.ve_dataset import ve_dataset
 from dataset.vqa_dataset import vqa_dataset
@@ -39,7 +39,13 @@ def create_dataset(dataset, config):
     
     if dataset=='pretrain':
         dataset = pretrain_dataset(config['train_file'], pretrain_transform)                  
-        return dataset      
+        return dataset
+
+    elif dataset == 're_split':
+        # train_dataset = re_split_train_dataset(config['split_file'], train_transform, config['image_root'])
+        # val_dataset = re_split_eval_dataset(config['split_file'], test_transform, config['image_root'], 'val')
+        test_dataset = re_split_eval_dataset(config['split_file'], test_transform, config['image_root'], 'test')
+        return test_dataset
                
     elif dataset=='re':          
         train_dataset = re_train_dataset(config['train_file'], train_transform, config['image_root'])
@@ -117,4 +123,23 @@ def create_loader(datasets, samplers, batch_size, num_workers, is_trains, collat
             drop_last=drop_last,
         )              
         loaders.append(loader)
-    return loaders    
+    return loaders
+
+
+def create_single_loader(dataset, sampler, batch_size, num_workers, is_train, collate_fn):
+    if is_train:
+        shuffle = (sampler is None)
+        drop_last = True
+    else:
+        shuffle = False
+        drop_last = False
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        pin_memory=True,
+        sampler=sampler,
+        shuffle=shuffle,
+        collate_fn=collate_fn,
+        drop_last=drop_last,
+    )
