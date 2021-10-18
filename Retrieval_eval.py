@@ -100,22 +100,23 @@ def evaluation(model, data_loader, tokenizer, device, config):
         topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[i])]]
         print('evaluated text size:', len(topk_idx))
 
-        # encoder_output: 128 * 577 * 768
-        encoder_output = image_feats[start + i].repeat(len(topk_idx), 1, 1)
-        # encoder_att: 128 * 577
-        encoder_att = torch.ones(encoder_output.size()[:-1], dtype=torch.long).to(device)
-        # text_feats[topk_idx]: 128 * 30 * 768, text_atts[topk_idx]: 128 * 30,
-        # output.last_hidden_state: 128 * 30 * 768
-        output = model.text_encoder(encoder_embeds=text_feats[topk_idx],
-                                    attention_mask=text_atts[topk_idx],
-                                    encoder_hidden_states=encoder_output,
-                                    encoder_attention_mask=encoder_att,
-                                    return_dict=True,
-                                    mode='fusion'
-                                    )
-        # score: list 128
-        score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
-        score_matrix_i2t[start + i, topk_idx] = score
+        for cap_order in [topk_idx[t: t+config['batch_size_cal']] for t in range(0, len(topk_idx), config['batch_size_cal'])]:
+            # encoder_output: 128 * 577 * 768
+            encoder_output = image_feats[start + i].repeat(len(cap_order), 1, 1)
+            # encoder_att: 128 * 577
+            encoder_att = torch.ones(encoder_output.size()[:-1], dtype=torch.long).to(device)
+            # text_feats[topk_idx]: 128 * 30 * 768, text_atts[topk_idx]: 128 * 30,
+            # output.last_hidden_state: 128 * 30 * 768
+            output = model.text_encoder(encoder_embeds=text_feats[cap_order],
+                                        attention_mask=text_atts[cap_order],
+                                        encoder_hidden_states=encoder_output,
+                                        encoder_attention_mask=encoder_att,
+                                        return_dict=True,
+                                        mode='fusion'
+                                        )
+            # score: list 128
+            score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
+            score_matrix_i2t[start + i, topk_idx] = score
 
     sims_matrix = sims_matrix.t()
     score_matrix_t2i = torch.full((len(texts), len(data_loader.dataset.image)), -100.0).to(
