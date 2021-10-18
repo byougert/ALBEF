@@ -256,3 +256,19 @@ def init_distributed_mode(args):
                                          world_size=args.world_size, rank=args.rank)
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+
+class Time(object):
+    def __init__(self, start_time=time.time(), last_time=time.time()):
+        self.start_time = start_time
+        self.last_time = last_time
+
+    def cost(self):
+        time_cost = datetime.timedelta(seconds=int(time.time() - self.last_time))
+        self.last_time = time.time()
+        return time_cost
+
+    def total_cost(self):
+        time_cost = datetime.timedelta(seconds=int(time.time() - self.start_time))
+        self.start_time = time.time()
+        return time_cost

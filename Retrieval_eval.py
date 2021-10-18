@@ -5,6 +5,7 @@ import os
 import random
 import time
 from pathlib import Path
+from toolz import partition_all
 
 import numpy as np
 import ruamel_yaml as yaml
@@ -31,7 +32,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     header = 'Evaluation:'
 
     print('Computing features for evaluation...')
-    start_time = time.time()
+    time_log = utils.Time()
 
     dataset = data_loader.dataset
     texts = dataset.text
@@ -75,6 +76,8 @@ def evaluation(model, data_loader, tokenizer, device, config):
         image_feats.append(image_feat)
         image_embeds.append(image_embed)
 
+    print('Feature extraction time: {}'.format(time_log.cost()))
+
     # val: image_feats: 1014 * 577 * 768
     image_feats = torch.cat(image_feats, dim=0)
     # val: image_embeds: 1014 * 256
@@ -82,8 +85,11 @@ def evaluation(model, data_loader, tokenizer, device, config):
 
     # val: sims_matrix: 1014 * 5070
     sims_matrix = image_embeds @ text_embeds.t()
+
+    print('Contrastive process time: {}'.format(time_log.cost()))
+
     # val: score_matrix_i2t: 1014 * 5070
-    score_matrix_i2t = torch.full((len(data_loader.dataset.image), len(texts)), -100.0).to(device)
+    score_matrix_i2t = torch.full((len(dataset.image), len(texts)), -100.0).to(device)
 
     num_tasks = utils.get_world_size()
     rank = utils.get_rank()
@@ -98,9 +104,8 @@ def evaluation(model, data_loader, tokenizer, device, config):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[i])]]
-        print('evaluated text size:', len(topk_idx))
-
-        for cap_order in [topk_idx[t: t+config['batch_size_cal']] for t in range(0, len(topk_idx), config['batch_size_cal'])]:
+        for cap_order in partition_all(config['batch_size_cal'], topk_idx):
+            cap_order = list(cap_order)
             # encoder_output: 128 * 577 * 768
             encoder_output = image_feats[start + i].repeat(len(cap_order), 1, 1)
             # encoder_att: 128 * 577
@@ -116,38 +121,43 @@ def evaluation(model, data_loader, tokenizer, device, config):
                                         )
             # score: list 128
             score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
-            score_matrix_i2t[start + i, topk_idx] = score
+            score_matrix_i2t[start + i, cap_order] = score
+    print('TR fusion time: {}'.format(time_log.cost()))
 
     sims_matrix = sims_matrix.t()
-    score_matrix_t2i = torch.full((len(texts), len(data_loader.dataset.image)), -100.0).to(
-        device)  # score_matrix_t2i: 5070 * 1014
+    score_matrix_t2i = torch.full((num_text, len(dataset.image)), -100.0).to(device)  # score_matrix_t2i: 5070 * 1014
 
     step = sims_matrix.size(0) // num_tasks + 1
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
 
+    '''
     for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
-        topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
-        encoder_output = image_feats[topk_idx]
-        encoder_att = torch.ones(encoder_output.size()[:-1], dtype=torch.long).to(device)
-        output = model.text_encoder(encoder_embeds=text_feats[start + i].repeat(config['k_test'], 1, 1),
-                                    attention_mask=text_atts[start + i].repeat(config['k_test'], 1),
-                                    encoder_hidden_states=encoder_output,
-                                    encoder_attention_mask=encoder_att,
-                                    return_dict=True,
-                                    mode='fusion'
-                                    )
-        score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
-        score_matrix_t2i[start + i, topk_idx] = score
+        # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
+        topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[i])]]
+        for img_order in partition_all(config['batch_size_cal'], topk_idx):
+            img_order = list(img_order)
+            encoder_output = image_feats[img_order]
+            encoder_att = torch.ones(encoder_output.size()[:-1], dtype=torch.long).to(device)
+            output = model.text_encoder(encoder_embeds=text_feats[start + i].repeat(len(img_order), 1, 1),
+                                        attention_mask=text_atts[start + i].repeat(len(img_order), 1),
+                                        encoder_hidden_states=encoder_output,
+                                        encoder_attention_mask=encoder_att,
+                                        return_dict=True,
+                                        mode='fusion'
+                                        )
+            score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
+            score_matrix_t2i[start + i, img_order] = score
+
+    print('IR fusion time: {}'.format(time_log.cost()))
+    '''
 
     if args.distributed:
         dist.barrier()
         torch.distributed.all_reduce(score_matrix_i2t, op=torch.distributed.ReduceOp.SUM)
         torch.distributed.all_reduce(score_matrix_t2i, op=torch.distributed.ReduceOp.SUM)
 
-    total_time = time.time() - start_time
-    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print('Evaluation time {}'.format(total_time_str))
+    print('Total evaluation time {}'.format(time_log.total_cost()))
 
     return score_matrix_i2t.cpu().numpy(), score_matrix_t2i.cpu().numpy()
 
@@ -278,7 +288,7 @@ def main(args, config):
     score_result_i2t, score_result_t2i = evaluation(model_without_ddp, test_loader, tokenizer, device, config)
 
     if utils.is_main_process():
-        test_result = itm_eval(score_result_i2t, score_result_t2i, test_loader.dataset.txt2img, test_loader.dataset.img2txt)
+        test_result = itm_eval(score_result_i2t, score_result_t2i, test_dataset.txt2img, test_dataset.img2txt)
         print(test_result)
 
         log_stats = {
