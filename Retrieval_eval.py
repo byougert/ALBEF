@@ -98,6 +98,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[i])]]
+        print('evaluated text size:', len(topk_idx))
 
         # encoder_output: 128 * 577 * 768
         encoder_output = image_feats[start + i].repeat(len(topk_idx), 1, 1)
