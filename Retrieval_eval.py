@@ -97,6 +97,9 @@ def evaluation(model, data_loader, tokenizer, device, config):
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
 
+    print(f'World size: ', num_tasks)
+    print(f'Rank: {rank}   Start:{start}   Step:{step}   End:{end}', force=True)
+
     img2text = json.load(open(config['img2text_file'], 'r'))
     text2img = json.load(open(config['text2img_file'], 'r'))
 
@@ -156,6 +159,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
         dist.barrier()
         torch.distributed.all_reduce(score_matrix_i2t, op=torch.distributed.ReduceOp.SUM)
         torch.distributed.all_reduce(score_matrix_t2i, op=torch.distributed.ReduceOp.SUM)
+        print(score_matrix_i2t)
 
     print('Total evaluation time {}'.format(time_log.total_cost()))
 
