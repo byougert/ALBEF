@@ -99,7 +99,7 @@ class re_split_eval_dataset(Dataset):
                    'img2txt': self.img2txt
                    }
         if utils.is_main_process():
-            json.dump(mapping, open('../output/Retrieval_flickr_eval/mapping.json', 'w+'))
+            json.dump(mapping, open('mapping.json', 'w+'))
             print("Dumps OK!")
 
     def __len__(self):
