@@ -301,7 +301,7 @@ def main(args, config):
         msg = model.load_state_dict(state_dict,strict=False)  
         
         print('load checkpoint from %s'%args.checkpoint)
-        print(msg)  
+        # print(msg)
         
     
     model = model.to(device)
@@ -383,7 +383,7 @@ def main(args, config):
 
     if utils.is_main_process():   
         with open(os.path.join(args.output_dir, "log.txt"),"a") as f:
-            f.write("best epoch: %d"%best_epoch)               
+            f.write("best epoch: %d\n" % best_epoch)
 
             
 if __name__ == '__main__':
