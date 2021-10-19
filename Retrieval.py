@@ -284,13 +284,14 @@ def main(args, config):
     
     if args.checkpoint:    
         checkpoint = torch.load(args.checkpoint, map_location='cpu') 
-        state_dict = checkpoint['model']
+        # state_dict = checkpoint['model']
+        state_dict = checkpoint
         
         # reshape positional embedding to accomodate for image resolution change
-        pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'],model.visual_encoder)         
-        state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
-        m_pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder_m.pos_embed'],model.visual_encoder_m)   
-        state_dict['visual_encoder_m.pos_embed'] = m_pos_embed_reshaped 
+        # pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'],model.visual_encoder)
+        # state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
+        # m_pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder_m.pos_embed'],model.visual_encoder_m)
+        # state_dict['visual_encoder_m.pos_embed'] = m_pos_embed_reshaped
         
         for key in list(state_dict.keys()):
             if 'bert' in key:
