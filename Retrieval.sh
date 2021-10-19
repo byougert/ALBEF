@@ -7,4 +7,5 @@ Retrieval.py \
 --config ./configs/Retrieval_flickr.yaml \
 --output_dir output/Retrieval_flickr \
 --checkpoint /data/ALBEF/flickr30k.pth \
---dist_url tcp://127.0.0.1:2222
+--dist_url tcp://127.0.0.1:2222 \
+--evaluate
