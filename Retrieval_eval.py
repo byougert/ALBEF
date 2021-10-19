@@ -93,12 +93,9 @@ def evaluation(model, data_loader, tokenizer, device, config):
 
     num_tasks = utils.get_world_size()
     rank = utils.get_rank()
-    step = sims_matrix.size(0) // num_tasks + 1
+    step = sims_matrix.size(0) // num_tasks
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
-
-    print(f'World size: ', num_tasks)
-    print(f'Rank: {rank}   Start:{start}   Step:{step}   End:{end}', force=True)
 
     img2text = json.load(open(config['img2text_file'], 'r'))
     text2img = json.load(open(config['text2img_file'], 'r'))
@@ -106,7 +103,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
-        topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[i])]]
+        topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[start+i])]]
         for cap_order in partition_all(config['batch_size_cal'], topk_idx):
             cap_order = list(cap_order)
             # encoder_output: 128 * 577 * 768
@@ -137,7 +134,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     '''
     for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
-        topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[i])]]
+        topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[start+i])]]
         for img_order in partition_all(config['batch_size_cal'], topk_idx):
             img_order = list(img_order)
             encoder_output = image_feats[img_order]
@@ -159,7 +156,6 @@ def evaluation(model, data_loader, tokenizer, device, config):
         dist.barrier()
         torch.distributed.all_reduce(score_matrix_i2t, op=torch.distributed.ReduceOp.SUM)
         torch.distributed.all_reduce(score_matrix_t2i, op=torch.distributed.ReduceOp.SUM)
-        print(score_matrix_i2t)
 
     print('Total evaluation time {}'.format(time_log.total_cost()))
 
