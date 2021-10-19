@@ -6,6 +6,9 @@ from torch.utils.data import Dataset
 
 from PIL import Image
 from PIL import ImageFile
+
+import utils
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
@@ -87,6 +90,17 @@ class re_split_eval_dataset(Dataset):
                 self.ann.append({'image': img['filename'],
                                  'caption': caps})
                 img_order += 1
+
+        mapping = {'img_order2id': self.img_order2id,
+                   'img_id2order': self.img_id2order,
+                   'text_order2id': self.text_order2id,
+                   'text_id2order': self.text_id2order,
+                   'txt2img': self.txt2img,
+                   'img2txt': self.img2txt
+                   }
+        if utils.is_main_process():
+            json.dump(mapping, open('../output/Retrieval_flickr_eval/mapping.json', 'w+'))
+            print("Dumps OK!")
 
     def __len__(self):
         return len(self.image)
