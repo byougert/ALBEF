@@ -295,7 +295,9 @@ def main(args, config):
         log_stats = {
             **{f'test_{k}': v for k, v in test_result.items()}
         }
-        with open(os.path.join(args.output_dir, "log_eval.txt"), "a") as f:
+        with open(os.path.join(args.output_dir, "log_inv.txt"), "a") as f:
+            f.write("checkpoint: " + args.checkpoint + "\n")
+            f.write("config: " + args.config + "\n")
             f.write(json.dumps(log_stats) + "\n")
 
     total_time = time.time() - start_time
@@ -303,8 +305,8 @@ def main(args, config):
     print('Evaluating time {}'.format(total_time_str))
 
     if utils.is_main_process():
-        with open(os.path.join(args.output_dir, "log_eval.txt"), "a") as f:
-            f.write("best epoch: %d\n" % best_epoch)
+        with open(os.path.join(args.output_dir, "log_inv.txt"), "a") as f:
+            f.write("best epoch: %d\n\n" % best_epoch)
 
 
 if __name__ == '__main__':

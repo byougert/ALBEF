@@ -346,6 +346,8 @@ def main(args, config):
                              'epoch': epoch,
                             }
                 with open(os.path.join(args.output_dir, "log.txt"),"a") as f:
+                    f.write("checkpoint: " + args.checkpoint + "\n")
+                    f.write("config: " + args.config + "\n")
                     f.write(json.dumps(log_stats) + "\n")     
             else:
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
@@ -383,7 +385,7 @@ def main(args, config):
 
     if utils.is_main_process():   
         with open(os.path.join(args.output_dir, "log.txt"),"a") as f:
-            f.write("best epoch: %d\n" % best_epoch)
+            f.write("best epoch: %d\n\n" % best_epoch)
 
             
 if __name__ == '__main__':
