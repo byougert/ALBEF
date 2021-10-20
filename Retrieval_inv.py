@@ -98,7 +98,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     img2text = json.load(open(config['img2text_file'], 'r'))
     text2img = json.load(open(config['text2img_file'], 'r'))
 
-    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:10], 50, header)):
+    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:100], 50, header)):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[start+i])]]
@@ -129,7 +129,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
 
-    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:10], 50, header)):
+    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:100], 50, header)):
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[start+i])]]
         for img_order in partition_all(config['batch_size_cal'], topk_idx):
