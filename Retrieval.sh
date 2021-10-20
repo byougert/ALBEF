@@ -10,23 +10,23 @@ checkpoint='/data/ALBEF/mscoco.pth'
 
 retrieval='Retrieval.py'
 
-if ["$3"=='topk']; then
+if [ "$3" == 'topk' ]; then
   retrieval='Retrieval.py'
 else
   retrieval='Retrieval_inv.py'
 fi
 
 
-if ["$1"=='flickr']; then
+if [ "$1" == 'flickr' ]; then
   output_dir='output/Retrieval_flickr'
 
-  if ["$3"=='topk']; then
+  if [ "$3" == 'topk' ]; then
     config='./configs/Retrieval_flickr.yaml'
   else
     config='./configs/Retrieval_flickr_inv.yaml'
   fi
 
-  if ["$2" == 'finetune']; then
+  if [ "$2" == 'finetune' ]; then
     checkpoint='/data/ALBEF/flickr.pth'
   else
     checkpoint='/data/ALBEF/mscoco.pth'
@@ -34,13 +34,13 @@ if ["$1"=='flickr']; then
 
 else
   output_dir='output/Retrieval_coco'
-  if ["$3"=='topk']; then
+  if [ "$3" == 'topk' ]; then
     config='./configs/Retrieval_coco.yaml'
   else
     config='./configs/Retrieval_coco_inv.yaml'
   fi
 
-  if ["$2" == 'finetune']; then
+  if [ "$2" == 'finetune' ]; then
     checkpoint='/data/ALBEF/mscoco.pth'
   else
     echo "NOT Support zero-shot on coco"
