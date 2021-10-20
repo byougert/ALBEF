@@ -98,7 +98,6 @@ def evaluation(model, data_loader, tokenizer, device, config):
     img2text = json.load(open(config['img2text_file'], 'r'))
     text2img = json.load(open(config['text2img_file'], 'r'))
 
-    '''
     for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
@@ -122,12 +121,11 @@ def evaluation(model, data_loader, tokenizer, device, config):
             score = model.itm_head(output.last_hidden_state[:, 0, :])[:, 1]
             score_matrix_i2t[start + i, cap_order] = score
     print('TR fusion time: {}'.format(time_log.cost()))
-    '''
 
     sims_matrix = sims_matrix.t()
     score_matrix_t2i = torch.full((num_text, len(dataset.image)), -100.0).to(device)  # score_matrix_t2i: 5070 * 1014
 
-    step = sims_matrix.size(0) // num_tasks + 1
+    step = sims_matrix.size(0) // num_tasks
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
 
