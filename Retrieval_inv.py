@@ -86,8 +86,6 @@ def evaluation(model, data_loader, tokenizer, device, config):
     # val: sims_matrix: 1014 * 5070
     sims_matrix = image_embeds @ text_embeds.t()
 
-    print('Contrastive process time: {}'.format(time_log.cost()))
-
     # val: score_matrix_i2t: 1014 * 5070
     score_matrix_i2t = torch.full((len(dataset.image), len(texts)), -100.0).to(device)
 
@@ -100,7 +98,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     img2text = json.load(open(config['img2text_file'], 'r'))
     text2img = json.load(open(config['text2img_file'], 'r'))
 
-    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
+    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:10], 50, header)):
         # sims: 5070 topk_sim: 128 topk_idx: 128
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.text_id2order[j] for j in img2text[str(dataset.img_order2id[start+i])]]
@@ -131,8 +129,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     start = rank * step
     end = min(sims_matrix.size(0), start + step)
 
-    '''
-    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
+    for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:10], 50, header)):
         # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
         topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[start+i])]]
         for img_order in partition_all(config['batch_size_cal'], topk_idx):
@@ -150,7 +147,6 @@ def evaluation(model, data_loader, tokenizer, device, config):
             score_matrix_t2i[start + i, img_order] = score
 
     print('IR fusion time: {}'.format(time_log.cost()))
-    '''
 
     if args.distributed:
         dist.barrier()
@@ -246,14 +242,15 @@ def main(args, config):
 
     if args.checkpoint:
         checkpoint = torch.load(args.checkpoint, map_location='cpu')
-        # state_dict = checkpoint['model']
-        state_dict = checkpoint
-
-        # reshape positional embedding to accomodate for image resolution change
-        # pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'], model.visual_encoder)
-        # state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
-        # m_pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder_m.pos_embed'], model.visual_encoder_m)
-        # state_dict['visual_encoder_m.pos_embed'] = m_pos_embed_reshaped
+        if args.evaluate:
+            state_dict = checkpoint
+        else:
+            state_dict = checkpoint['model']
+            # reshape positional embedding to accomodate for image resolution change
+            pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder.pos_embed'], model.visual_encoder)
+            state_dict['visual_encoder.pos_embed'] = pos_embed_reshaped
+            m_pos_embed_reshaped = interpolate_pos_embed(state_dict['visual_encoder_m.pos_embed'], model.visual_encoder_m)
+            state_dict['visual_encoder_m.pos_embed'] = m_pos_embed_reshaped
 
         for key in list(state_dict.keys()):
             if 'bert' in key:
