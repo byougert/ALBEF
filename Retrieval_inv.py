@@ -295,7 +295,7 @@ def main(args, config):
         log_stats = {
             **{f'test_{k}': v for k, v in test_result.items()}
         }
-        with open(os.path.join(args.output_dir, "log.txt"), "a") as f:
+        with open(os.path.join(args.output_dir, "log_eval.txt"), "a") as f:
             f.write(json.dumps(log_stats) + "\n")
 
     total_time = time.time() - start_time
