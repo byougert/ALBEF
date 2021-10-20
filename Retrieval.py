@@ -130,7 +130,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     
     num_tasks = utils.get_world_size()
     rank = utils.get_rank() 
-    step = sims_matrix.size(0)//num_tasks + 1
+    step = sims_matrix.size(0)//num_tasks
     start = rank*step
     end = min(sims_matrix.size(0), start+step)
 
@@ -158,7 +158,7 @@ def evaluation(model, data_loader, tokenizer, device, config):
     sims_matrix = sims_matrix.t()
     score_matrix_t2i = torch.full((len(texts),len(data_loader.dataset.image)),-100.0).to(device)    # score_matrix_t2i: 5070 * 1014
     
-    step = sims_matrix.size(0)//num_tasks + 1
+    step = sims_matrix.size(0)//num_tasks
     start = rank*step
     end = min(sims_matrix.size(0),start+step)    
     
