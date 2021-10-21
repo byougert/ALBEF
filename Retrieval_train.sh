@@ -2,7 +2,7 @@
 
 cd /home/byyoung/python_space/ALBEF
 
-export CUDA_VISIBLE_DEVICES=4,5,6,7
+#export CUDA_VISIBLE_DEVICES=4,5,6,7
 
 config='./configs/Retrieval_flickr.yaml'
 output_dir='output/Retrieval_flickr'
