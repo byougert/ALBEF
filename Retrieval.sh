@@ -27,7 +27,7 @@ if [ "$1" == 'flickr' ]; then
   fi
 
   if [ "$2" == 'finetune' ]; then
-    checkpoint='/data/ALBEF/flickr.pth'
+    checkpoint='/data/ALBEF/flickr30k.pth'
   else
     checkpoint='/data/ALBEF/mscoco.pth'
   fi
