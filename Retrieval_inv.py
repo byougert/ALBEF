@@ -132,8 +132,8 @@ def evaluation(model, data_loader, tokenizer, device, config):
     end = min(sims_matrix.size(0), start + step)
 
     for i, sims in enumerate(metric_logger.log_every(sims_matrix[start:end], 50, header)):
-        topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
-        # topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[start+i])]]
+        # topk_sim, topk_idx = sims.topk(k=config['k_test'], dim=0)
+        topk_idx = [dataset.img_id2order[j] for j in text2img[str(dataset.text_order2id[start+i])]]
         for img_order in partition_all(config['batch_size_cal'], topk_idx):
             img_order = list(img_order)
             encoder_output = image_feats[img_order]
