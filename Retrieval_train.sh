@@ -10,7 +10,7 @@ checkpoint='/data/ALBEF/ALBEF.pth'
 
 retrieval='Retrieval.py'
 
-python -m torch.distributed.launch --nproc_per_node=4 --use_env \
+python -m torch.distributed.launch --nproc_per_node=8 --use_env \
 $retrieval \
 --config $config \
 --output_dir $output_dir \
